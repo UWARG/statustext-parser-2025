@@ -13,7 +13,8 @@ from modules.common.data_encoding.metadata_encoding_decoding import decode_metad
 from modules.common.data_encoding import worker_enum
 from modules.common.kml.kml_conversion import positions_to_kml
 
-CONNECTION_ADDRESS = "tcp:localhost:14550"  
+CONNECTION_ADDRESS = "tcp:localhost:14550"
+
 
 def main(save_directory, document_name_prefix):
     vehicle = mavutil.mavlink_connection(CONNECTION_ADDRESS, source_system=255, source_component=0)
@@ -40,26 +41,42 @@ def main(save_directory, document_name_prefix):
                         if mavutil.all_printable(gps_msg.data):
                             print(gps_msg.data)
                     else:
-                        success, worker_id, global_position = decode_bytes_to_position_global(gps_msg.data)
+                        success, worker_id, global_position = decode_bytes_to_position_global(
+                            gps_msg.data
+                        )
                         if success and worker_id == worker_enum.WorkerEnum.COMMUNICATIONS_WORKER:
-                            print(f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}")
+                            print(
+                                f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}"
+                            )
                             positions.append(global_position)
                             received_positions_count += 1
                         else:
-                            print(f"Unsuccessful or Non-communications worker message (worker_id: {worker_id})")
-                success, kml_path = positions_to_kml(positions, document_name_prefix, save_directory)
+                            print(
+                                f"Unsuccessful or Non-communications worker message (worker_id: {worker_id})"
+                            )
+                success, kml_path = positions_to_kml(
+                    positions, document_name_prefix, save_directory
+                )
                 if success:
                     print(f"KML file saved to {kml_path}")
                 else:
                     print("Failed to save KML file")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Collect drone GPS positions and save as KML.")
-    parser.add_argument("--save-directory", type=str, default="logs", help="Directory to save KML files.")
-    parser.add_argument("--document-name-prefix", type=str, default="IR hotspot locations", help="Prefix for the KML document name.")
-    
+    parser.add_argument(
+        "--save-directory", type=str, default="logs", help="Directory to save KML files."
+    )
+    parser.add_argument(
+        "--document-name-prefix",
+        type=str,
+        default="IR hotspot locations",
+        help="Prefix for the KML document name.",
+    )
+
     args = parser.parse_args()
     save_directory = Path(args.save_directory)
     document_name_prefix = args.document_name_prefix
-    
+
     main(save_directory, document_name_prefix)
