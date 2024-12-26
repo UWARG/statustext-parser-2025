@@ -13,7 +13,7 @@ from modules.common.data_encoding.metadata_encoding_decoding import decode_metad
 from modules.common.data_encoding import worker_enum
 from modules.common.kml.kml_conversion import positions_to_kml
 
-CONNECTION_ADDRESS = "tcp:localhost:14550"
+CONNECTION_ADDRESS = "tcp:localhost:14550"  
 
 
 def main(save_directory, document_name_prefix):
