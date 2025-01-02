@@ -19,8 +19,8 @@ def main(save_directory, document_name_prefix):
     """
     Connects to a drone, collects GPS position data, and generates a KML file.
 
-    The function listens for GPS data messages, decodes them into positions, 
-    and saves them as a KML file in the specified directory once the expected 
+    The function listens for GPS data messages, decodes them into positions,
+    and saves them as a KML file in the specified directory once the expected
     number of positions is received.
 
     Args:
