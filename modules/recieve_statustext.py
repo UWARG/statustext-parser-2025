@@ -15,7 +15,7 @@ import modules.common.kml.kml_conversion
 CONNECTION_ADDRESS = "tcp:localhost:14550"
 
 
-def main(save_directory, document_name_prefix):
+def main(save_directory: str, document_name_prefix: str) -> int:
     """
     Connects to a drone, collects GPS position data, and generates a KML file.
 
