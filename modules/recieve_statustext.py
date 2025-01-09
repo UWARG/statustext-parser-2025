@@ -5,6 +5,7 @@ and generates a KML file after receiving the expected number of positions. The p
 
 import argparse
 from pathlib import Path
+
 from pymavlink import mavutil
 import modules.common.modules.data_encoding.message_encoding_decoding
 import modules.common.modules.data_encoding.metadata_encoding_decoding
