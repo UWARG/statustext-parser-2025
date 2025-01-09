@@ -9,8 +9,8 @@ from pathlib import Path
 from pymavlink import mavutil
 import modules.common.modules.data_encoding.message_encoding_decoding
 import modules.common.modules.data_encoding.metadata_encoding_decoding
-from modules.common.data_encoding import worker_enum
-import modules.common.kml.kml_conversion
+from modules.common.modules.data_encoding import worker_enum
+import modules.common.modules.kml.kml_conversion
 
 
 CONNECTION_ADDRESS = "tcp:localhost:14550"
