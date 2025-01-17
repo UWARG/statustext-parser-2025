@@ -44,7 +44,6 @@ def main(save_directory: str, document_name_prefix: str) -> int:
     except Exception as e:
         print(f"Error connecting to vehicle: {e}")
         return -1
-
     while True:
         positions = []
         msg = vehicle.recv_match(type="STATUSTEXT", blocking=True)
@@ -60,44 +59,37 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             )
             if not success or worker_id != worker_enum.WorkerEnum.COMMUNICATIONS_WORKER:
                 return
-            
             received_positions_count = 0
             while received_positions_count < expected_positions_count:
                 gps_msg = vehicle.recv_match(type="STATUSTEXT", blocking=True)
                 if not gps_msg:
                     print("no message")
-                    continue
-            
+                    continue 
                 if gps_msg.get_type() == "BAD_DATA":
                     if mavutil.all_printable(gps_msg.data):
                         print(gps_msg.data)
-                    return -1
-            
+                    return -1 
                 success, worker_id, global_position = (
                     message_encoding_decoding.decode_bytes_to_position_global(gps_msg.data)
-                )
+                ) 
                 if not success or worker_id != worker_enum.WorkerEnum.COMMUNICATIONS_WORKER:
                     print(f"Unsuccessful or Non-communications worker message (worker_id: {worker_id})")
-                    return -1
-            
+                    return -1 
                 print(
                     f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}"
-                )
+                ) 
                 positions.append(global_position)
-                received_positions_count += 1
-            
+                received_positions_count += 1 
             success, kml_path = kml_conversion.positions_to_kml(
                 positions, document_name_prefix, save_directory
-            )
+            ) 
             if not success:
                 print("Failed to save KML file")
                 return -1
             print(f"KML file saved to {kml_path}")
-    return 0
-
+    return 0 
 DEFAULT_SAVE_DIRECTORY = "logs"
 DEFAULT_DOCUMENT_NAME_PREFIX = "IR hotspot locations"
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Collect drone GPS positions and save as KML.")
     parser.add_argument(
@@ -112,6 +104,5 @@ if __name__ == "__main__":
         default=DEFAULT_DOCUMENT_NAME_PREFIX,
         help="Prefix for the KML document name.",
     )
-
     args = parser.parse_args()
     main(save_directory, document_name_prefix)
