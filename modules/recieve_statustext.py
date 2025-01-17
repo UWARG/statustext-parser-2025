@@ -4,14 +4,13 @@ and generates a KML file after receiving the expected number of positions. The p
 """
 
 import argparse
-from pathlib import Path
 
 
 from pymavlink import mavutil
 from modules.common.modules.data_encoding import message_encoding_decoding
 from modules.common.modules.data_encoding import metadata_encoding_decoding
 from modules.common.modules.data_encoding import worker_enum
-import modules.common.modules.kml.kml_conversion
+import modules.common.modules.kml
 
 
 CONNECTION_ADDRESS = "tcp:localhost:14550"
@@ -32,9 +31,6 @@ def main(save_directory: str, document_name_prefix: str) -> int:
     Returns:
         int: 0 on success, -1 on error (connection failure, invalid data, or failure to save KML).
     """
-    save_directory = Path(args.save_directory)
-    document_name_prefix = args.document_name_prefix
-
     vehicle = mavutil.mavlink_connection(CONNECTION_ADDRESS, source_system=255, source_component=0)
     # Catch library and other unexpected errors
     # pylint: disable=broad-exception-caught
@@ -83,7 +79,7 @@ def main(save_directory: str, document_name_prefix: str) -> int:
                 )
                 positions.append(global_position)
                 received_positions_count += 1
-            success, kml_path = kml_conversion.positions_to_kml(
+            success, kml_path = modules.common.modules.kml.kml_conversion.positions_to_kml(
                 positions, document_name_prefix, save_directory
             )
             if not success:
@@ -95,6 +91,7 @@ def main(save_directory: str, document_name_prefix: str) -> int:
 
 DEFAULT_SAVE_DIRECTORY = "logs"
 DEFAULT_DOCUMENT_NAME_PREFIX = "IR hotspot locations"
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Collect drone GPS positions and save as KML.")
     parser.add_argument(
@@ -110,4 +107,5 @@ if __name__ == "__main__":
         help="Prefix for the KML document name.",
     )
     args = parser.parse_args()
-    main(save_directory, document_name_prefix)
+
+    main(args.save_directory, args.document_name_prefix)
