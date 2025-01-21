@@ -38,9 +38,9 @@ def main(save_directory: str, document_name_prefix: str) -> int:
         vehicle.wait_heartbeat()
         print("connected")
     except Exception as e:
-
         print(f"Error connecting to vehicle: {e}")
         return -1
+
     while True:
         positions = []
         msg = vehicle.recv_match(type="STATUSTEXT", blocking=True)
