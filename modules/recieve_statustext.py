@@ -70,9 +70,14 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             return -1
 
         # Receive first metadata message from communications worker to determine number of hotspots
-        success, worker_id, expected_positions_count = metadata_encoding_decoding.decode_metadata(
-            bytes(msg.text, "utf-8")
-        )
+        try:  # Filter out system messages (they will fail)
+            success, worker_id, expected_positions_count = (
+                metadata_encoding_decoding.decode_metadata(bytes(msg.text, "utf-8"))
+            )
+        # except binascii.Error (failed to base64 decode) -- skip processing system messages
+        # pylint: disable=bare-except
+        except:
+            continue
         if not success:
             print("Error: Failed to decode metadata")
             return -1
@@ -91,11 +96,16 @@ def main(save_directory: str, document_name_prefix: str) -> int:
                     print(f"Bad GPS data received: {gps_msg}")
                 print("Error: Bad GPS data")
                 return -1
-            success, worker_id, global_position = (
-                message_encoding_decoding.decode_bytes_to_position_global(
-                    bytes(gps_msg.text, "utf-8")
+            try:  # Filter out system messages (they will fail)
+                success, worker_id, global_position = (
+                    message_encoding_decoding.decode_bytes_to_position_global(
+                        bytes(gps_msg.text, "utf-8")
+                    )
                 )
-            )
+            # except binascii.Error (failed to base64 decode) -- skip processing system messages
+            # pylint: disable=bare-except
+            except:
+                continue
             if not success:
                 print("Error: Failed to decode GPS data")
                 return -1
