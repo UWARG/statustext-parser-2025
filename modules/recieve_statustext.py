@@ -5,8 +5,10 @@ and generates a KML file after receiving the expected number of positions. The p
 
 import argparse
 
-
 from pymavlink import mavutil
+
+from modules.common.modules import position_global
+from modules.common.modules import position_global_relative_altitude
 from modules.common.modules.data_encoding import message_encoding_decoding
 from modules.common.modules.data_encoding import metadata_encoding_decoding
 from modules.common.modules.data_encoding import worker_enum
@@ -14,6 +16,20 @@ from modules.common.modules.kml import kml_conversion
 
 
 CONNECTION_ADDRESS = "tcp:localhost:14550"
+
+
+def position_global_to_relative_altitude(
+    original: position_global.PositionGlobal,
+) -> (
+    tuple[True, position_global_relative_altitude.PositionGlobalRelativeAltitude]
+    | tuple[False, None]
+):
+    """
+    Convert a PositionGlobal to a PositionGlobalRelativeAltitude.
+    """
+    return position_global_relative_altitude.PositionGlobalRelativeAltitude.create(
+        original.latitude, original.longitude, original.altitude
+    )
 
 
 def main(save_directory: str, document_name_prefix: str) -> int:
@@ -48,14 +64,14 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             print("no message")
             continue
         if msg.get_type() == "BAD_DATA":
-            if mavutil.all_printable(msg.data):
-                print(f"Bad data received: {msg.data}")
+            if mavutil.all_printable(msg):
+                print(f"Bad data received: {msg}")
             print("Error: Bad data")
             return -1
 
         # Receive first metadata message from communications worker to determine number of hotspots
         success, worker_id, expected_positions_count = metadata_encoding_decoding.decode_metadata(
-            msg.data
+            bytes(msg.text, "utf-8")
         )
         if not success:
             print("Error: Failed to decode metadata")
@@ -71,12 +87,14 @@ def main(save_directory: str, document_name_prefix: str) -> int:
                 print("No GPS message received.")
                 continue
             if gps_msg.get_type() == "BAD_DATA":
-                if mavutil.all_printable(gps_msg.data):
-                    print(f"Bad GPS data received: {gps_msg.data}")
+                if mavutil.all_printable(gps_msg):
+                    print(f"Bad GPS data received: {gps_msg}")
                 print("Error: Bad GPS data")
                 return -1
             success, worker_id, global_position = (
-                message_encoding_decoding.decode_bytes_to_position_global(gps_msg.data)
+                message_encoding_decoding.decode_bytes_to_position_global(
+                    bytes(gps_msg.text, "utf-8")
+                )
             )
             if not success:
                 print("Error: Failed to decode GPS data")
@@ -86,8 +104,14 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             print(
                 f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}"
             )
-            positions.append(global_position)
-            received_positions_count += 1
+            result, global_position_relative_altitude = position_global_to_relative_altitude(
+                global_position
+            )
+            if result:
+                positions.append(global_position_relative_altitude)
+                received_positions_count += 1
+            else:
+                print("Failed to convert to relative altitude")
 
         # Generating KML file
         success, kml_path = kml_conversion.positions_to_kml(
