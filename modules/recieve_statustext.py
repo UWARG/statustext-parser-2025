@@ -4,6 +4,7 @@ and generates a KML file after receiving the expected number of positions. The p
 """
 
 import argparse
+import pathlib
 
 from pymavlink import mavutil
 
@@ -124,6 +125,7 @@ def main(save_directory: str, document_name_prefix: str) -> int:
                 print("Failed to convert to relative altitude")
 
         # Generating KML file
+        pathlib.Path(save_directory).mkdir(exist_ok=True, parents=True)
         success, kml_path = kml_conversion.positions_to_kml(
             positions, document_name_prefix, save_directory
         )
