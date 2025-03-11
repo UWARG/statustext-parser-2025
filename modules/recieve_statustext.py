@@ -19,17 +19,18 @@ from modules.common.modules.kml import kml_conversion
 CONNECTION_ADDRESS = "tcp:localhost:14550"
 
 
-def position_global_to_relative_altitude(
+def position_global_to_named_relative_altitude(
+    name: str,
     original: position_global.PositionGlobal,
 ) -> (
-    tuple[True, position_global_relative_altitude.PositionGlobalRelativeAltitude]
+    tuple[True, position_global_relative_altitude.NamedPositionGlobalRelativeAltitude]
     | tuple[False, None]
 ):
     """
     Convert a PositionGlobal to a PositionGlobalRelativeAltitude.
     """
-    return position_global_relative_altitude.PositionGlobalRelativeAltitude.create(
-        original.latitude, original.longitude, original.altitude
+    return position_global_relative_altitude.NamedPositionGlobalRelativeAltitude.create(
+        name, original.latitude, original.longitude, original.altitude
     )
 
 
@@ -115,18 +116,21 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             print(
                 f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}"
             )
-            result, global_position_relative_altitude = position_global_to_relative_altitude(
-                global_position
+            result, named_global_position_relative_altitude = (
+                position_global_to_named_relative_altitude(
+                    f"Hotspot {received_positions_count+1}",
+                    global_position,
+                )
             )
             if result:
-                positions.append(global_position_relative_altitude)
+                positions.append(named_global_position_relative_altitude)
                 received_positions_count += 1
             else:
                 print("Failed to convert to relative altitude")
 
         # Generating KML file
         pathlib.Path(save_directory).mkdir(exist_ok=True, parents=True)
-        success, kml_path = kml_conversion.positions_to_kml(
+        success, kml_path = kml_conversion.named_positions_to_kml(
             positions, document_name_prefix, save_directory
         )
         if not success:
