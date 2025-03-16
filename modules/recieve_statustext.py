@@ -81,9 +81,10 @@ def main(save_directory: str, document_name_prefix: str) -> int:
         except:
             continue
         if not success:
-            print("Error: Failed to decode metadata")
-            return -1
+            print(f"Error: Failed to decode metadata, message recieved was {msg.text}. Skipping it for now")
+            continue
         if worker_id != worker_enum.WorkerEnum.COMMUNICATIONS_WORKER:
+            print("Warning: skipping over non-communication worker message")
             continue
         received_positions_count = 0
 
@@ -109,9 +110,10 @@ def main(save_directory: str, document_name_prefix: str) -> int:
             except:
                 continue
             if not success:
-                print("Error: Failed to decode GPS data")
-                return -1
+                print(f"Error: Failed to decode GPS data, message received was {gps_msg.text}. Skipping it for now")
+                continue
             if worker_id != worker_enum.WorkerEnum.COMMUNICATIONS_WORKER:
+                print("Warning: skipping over non-communication worker message")
                 continue
             print(
                 f"Decoded GPS Data: {global_position.latitude}, {global_position.longitude}, {global_position.altitude}"
