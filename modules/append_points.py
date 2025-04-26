@@ -101,7 +101,9 @@ def append_source(
 if __name__ == "__main__":
 
     arg_parser = argparse.ArgumentParser(description="Append points to a KML file.")
-    arg_parser.add_argument("--kml_file", type=str, required=True, help="Path to the KML file to modify.")
+    arg_parser.add_argument(
+        "--kml_file", type=str, required=True, help="Path to the KML file to modify."
+    )
     arg_parser.add_argument(
         "--type",
         type=str,
@@ -110,7 +112,9 @@ if __name__ == "__main__":
         help="Type of point to append: 'hotspot' or 'source'.",
     )
     arg_parser.add_argument("--latitude", type=float, required=True, help="Latitude of the point.")
-    arg_parser.add_argument("--longitude", type=float, required=True, help="Longitude of the point.")
+    arg_parser.add_argument(
+        "--longitude", type=float, required=True, help="Longitude of the point."
+    )
     arg_parser.add_argument(
         "--description",
         type=str,
