@@ -2,6 +2,7 @@
 # Required packages are ordered alphabetically within each module
 
 # Global
+pykml
 pytest
 
 # Linters and formatters are explicitly versioned
