@@ -78,7 +78,7 @@ def append_source(
     # Checks if a source already exists
     for point in kml.Document.Placemark:
         if "Source" in str(point.name):
-            print("Warning: Source already exists in the KML file. Overriding it.")
+            print("Warning: Changed source of fire location")
             kml.Document.remove(point)
             break
 
