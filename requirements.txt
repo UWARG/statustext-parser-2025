@@ -1,6 +1,14 @@
 # Module names are ordered alphabetically
 # Required packages are ordered alphabetically within each module
 
+# Merge KML Module
+pygeohash
+pykml
+lxml
+argparse
+time
+pathlib
+
 # Global
 pytest
 
