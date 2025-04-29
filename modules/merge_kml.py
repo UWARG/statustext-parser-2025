@@ -3,6 +3,7 @@ This module takes two generated KML files and merges shared positions based on a
 """
 
 import argparse
+import logging
 import pathlib
 import time
 
@@ -33,24 +34,36 @@ def main(
     Returns:
         int: 0 on success, -1 on error (invalid threshold, couldn't open files, couldn't create new file).
     """
+    #Initialize logger
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(filename=f"./logs/Merging_Log_{int(time.time())}.log", encoding="utf-8", level=logging.DEBUG)
 
     # Verify precision input
-    print("Precision: ", precision)
+    logger.info(f"Precision: {precision}")
     if precision < 1 or precision > 12:
-        print("Invalid precision level. Should range from 1-12")
+        logger.error("Invalid precision level. Should range from 1-12")
         return -1
     if precision < 8:
-        print(
-            "WARNING: Your precision is now less than 8 characters, meaning the estimations may be largely inaccurate."
+        logger.warning(
+            "Your precision is now less than 8 characters, meaning the estimations may be largely inaccurate."
         )
+    
+    try:
+        with open(file_1, "r", encoding="utf-8") as f1:
+            doc_1 = kml_parser.parse(f1).getroot().Document
+    except IOError as e:
+        logger.error(f"Failed to open file_1 {file_1}.\n{e}")
+        return -1
 
-    with open(file_1, "r", encoding="utf-8") as f1:
-        doc_1 = kml_parser.parse(f1).getroot().Document
+    try:
+        with open(file_2, "r", encoding="utf-8") as f2:
+            doc_2 = kml_parser.parse(f2).getroot().Document
+    except IOError as e:
+        logger.error(f"Failed to open file_2 {file_2}.\n{e}")
+        return -1
 
-    with open(file_2, "r", encoding="utf-8") as f2:
-        doc_2 = kml_parser.parse(f2).getroot().Document
-
-    points = {}
+    hotspots = {}
+    sources = {}
 
     for place in doc_2.iterchildren():  # Append all points from both files
         doc_1.append(place)
@@ -63,24 +76,36 @@ def main(
         alt = float(coordinates[2])
         geohash = pgh.encode(latitude=lat, longitude=long, precision=precision)
 
-        if geohash not in points:
-            points[geohash] = [lat, long, alt]
-        else:
-            point = points[geohash]
-            points[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
-
-    # print(etree.tostring(doc_1, pretty_print=True).decode())
-    print(points)
+        if "Hotspot" in place.name.text:
+            if geohash not in hotspots:
+                hotspots[geohash] = [lat, long, alt]
+            else:
+                point = hotspots[geohash]
+                hotspots[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
+        elif "Source" in place.name.text:
+            if geohash not in sources:
+                sources[geohash] = [lat, long, alt]
+            else:
+                point = sources[geohash]
+                sources[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
 
     # Generate merged KML file
     kml = KML.kml()
     doc = KML.Document()
     kml.append(doc)
 
-    for i, point in enumerate(points.values()):
+    for i, point in enumerate(hotspots.values()):
         doc.append(
             KML.Placemark(
-                KML.name(f"Point {i}"),
+                KML.name(f"Hotspot {i}"),
+                KML.Point(KML.coordinates(f"{point[0]},{point[1]},{point[2]}")),
+            )
+        )
+
+    for i, point in enumerate(sources.values()):
+        doc.append(
+            KML.Placemark(
+                KML.name(f"Sources {i}"),
                 KML.Point(KML.coordinates(f"{point[0]},{point[1]},{point[2]}")),
             )
         )
@@ -88,9 +113,14 @@ def main(
     current_time = time.time()
     pathlib.Path(save_directory).mkdir(exist_ok=True, parents=True)
     kml_file_path = pathlib.Path(save_directory, f"{document_name_prefix}_{int(current_time)}.kml")
-
-    with open(kml_file_path, "wb") as f:
-        f.write(etree.tostring(etree.ElementTree(kml), pretty_print=True))
+    
+    try:
+        with open(kml_file_path, "w") as f:
+            f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+            f.write(etree.tostring(etree.ElementTree(kml), pretty_print=True).decode("utf-8"))
+    except IOError as e:
+        logger.error(f"Failed to write to merged file.\n{e}")
+        return -1
 
     return 0
 
@@ -131,4 +161,4 @@ if __name__ == "__main__":
     ):
         print("Process completed successfully.")
     else:
-        print("Process failed.")
+        print("Process failed. Check logs for more detail.")
