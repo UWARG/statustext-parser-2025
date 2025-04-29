@@ -5,9 +5,6 @@
 pygeohash
 pykml
 lxml
-argparse
-time
-pathlib
 
 # Global
 pytest
