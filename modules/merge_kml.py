@@ -60,13 +60,14 @@ def main(
         coordinates = place.Point.coordinates.text.split(",")
         lat = float(coordinates[0])
         long = float(coordinates[1])
+        alt = float(coordinates[2])
         geohash = pgh.encode(latitude=lat, longitude=long, precision=precision)
 
         if geohash not in points:
-            points[geohash] = [lat, long]
+            points[geohash] = [lat, long, alt]
         else:
             point = points[geohash]
-            points[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2]
+            points[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
 
     # print(etree.tostring(doc_1, pretty_print=True).decode())
     print(points)
@@ -79,11 +80,10 @@ def main(
     for i, point in enumerate(points.values()):
         doc.append(
             KML.Placemark(
-                KML.name(f"Point {i}"), KML.Point(KML.coordinates(f"{point[0]},{point[1]}"))
+                KML.name(f"Point {i}"),
+                KML.Point(KML.coordinates(f"{point[0]},{point[1]},{point[2]}")),
             )
         )
-
-    print(etree.tostring(etree.ElementTree(doc), pretty_print=True).decode())
 
     current_time = time.time()
     pathlib.Path(save_directory).mkdir(exist_ok=True, parents=True)
