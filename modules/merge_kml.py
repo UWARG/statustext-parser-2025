@@ -34,12 +34,14 @@ def main(
     Returns:
         int: 0 on success, -1 on error (invalid threshold, couldn't open files, couldn't create new file).
     """
-    #Initialize logger
+    # Initialize logger
     logger = logging.getLogger(__name__)
-    logging.basicConfig(filename=f"./logs/Merging_Log_{int(time.time())}.log", encoding="utf-8", level=logging.DEBUG)
+    logging.basicConfig(
+        filename=f"./logs/Merging_Log_{int(time.time())}.log", encoding="utf-8", level=logging.DEBUG
+    )
 
     # Verify precision input
-    logger.info(f"Precision: {precision}")
+    logger.info("Precision: %s", precision)
     if precision < 1 or precision > 12:
         logger.error("Invalid precision level. Should range from 1-12")
         return -1
@@ -47,19 +49,19 @@ def main(
         logger.warning(
             "Your precision is now less than 8 characters, meaning the estimations may be largely inaccurate."
         )
-    
+
     try:
         with open(file_1, "r", encoding="utf-8") as f1:
             doc_1 = kml_parser.parse(f1).getroot().Document
     except IOError as e:
-        logger.error(f"Failed to open file_1 {file_1}.\n{e}")
+        logger.error("Failed to open file_1 %s.\n%s", file_1, e)
         return -1
 
     try:
         with open(file_2, "r", encoding="utf-8") as f2:
             doc_2 = kml_parser.parse(f2).getroot().Document
     except IOError as e:
-        logger.error(f"Failed to open file_2 {file_2}.\n{e}")
+        logger.error("Failed to open file_2 %s.\n%s", file_2, e)
         return -1
 
     hotspots = {}
@@ -81,13 +83,21 @@ def main(
                 hotspots[geohash] = [lat, long, alt]
             else:
                 point = hotspots[geohash]
-                hotspots[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
+                hotspots[geohash] = [
+                    (point[0] + lat) / 2,
+                    (point[1] + long) / 2,
+                    (point[2] + alt) / 2,
+                ]
         elif "Source" in place.name.text:
             if geohash not in sources:
                 sources[geohash] = [lat, long, alt]
             else:
                 point = sources[geohash]
-                sources[geohash] = [(point[0] + lat) / 2, (point[1] + long) / 2, (point[2] + alt) / 2]
+                sources[geohash] = [
+                    (point[0] + lat) / 2,
+                    (point[1] + long) / 2,
+                    (point[2] + alt) / 2,
+                ]
 
     # Generate merged KML file
     kml = KML.kml()
@@ -113,13 +123,13 @@ def main(
     current_time = time.time()
     pathlib.Path(save_directory).mkdir(exist_ok=True, parents=True)
     kml_file_path = pathlib.Path(save_directory, f"{document_name_prefix}_{int(current_time)}.kml")
-    
+
     try:
-        with open(kml_file_path, "w") as f:
-            f.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        with open(kml_file_path, "w", encoding="utf-8") as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(etree.tostring(etree.ElementTree(kml), pretty_print=True).decode("utf-8"))
     except IOError as e:
-        logger.error(f"Failed to write to merged file.\n{e}")
+        logger.error("Failed to write to merged file.\n%s", e)
         return -1
 
     return 0
