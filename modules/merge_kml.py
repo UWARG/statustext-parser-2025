@@ -123,6 +123,17 @@ def main(
         if i == 0:
             home = [lat, long, alt]  # The first valid placemark will be our home
 
+            # home (Global Position) used as Home Location
+            result, home_pos = position_global.PositionGlobal.create(
+                latitude=home[0], longitude=home[1], altitude=home[2]
+            )
+
+            if not result:
+                logger.error(
+                    "Failed to create Global Position (home_pos) from Placemark ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
+                )
+                return -1
+
         if "Source" in place.name.text:  # Average all source points
             if len(source) == 0:
                 source = [lat, long, alt]
@@ -139,17 +150,6 @@ def main(
             if not result:
                 logger.error(
                     "Failed to create Global Position (hotspot) for Hotspot ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
-                )
-                return -1
-
-            # home (Global Position) used as Home Location
-            result, home_pos = position_global.PositionGlobal.create(
-                latitude=home[0], longitude=home[1], altitude=home[2]
-            )
-
-            if not result:
-                logger.error(
-                    "Failed to create Global Position (home_pos) for Source ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
                 )
                 return -1
 
