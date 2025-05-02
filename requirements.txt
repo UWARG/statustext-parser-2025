@@ -4,7 +4,6 @@
 # Merge KML Module
 pygeohash
 pykml
-lxml
 
 # Global
 pykml
