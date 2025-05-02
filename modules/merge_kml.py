@@ -7,6 +7,7 @@ import pathlib
 import time
 
 from lxml import etree
+from lxml import objectify
 from pykml import parser as kml_parser
 from pykml.factory import KML_ElementMaker as KML
 
@@ -16,7 +17,7 @@ from modules.common.modules.mavlink import local_global_conversion
 from modules.common.modules.logger import logger as log
 
 
-def validate_placemark(logger: log.Logger, place: str) -> bool:
+def validate_placemark(logger: log.Logger, place: objectify.ObjectifiedElement) -> bool:
     """
     Uses common's Logger to log errors and validate a KML Placemark
     """
@@ -25,9 +26,9 @@ def validate_placemark(logger: log.Logger, place: str) -> bool:
             f"Invalid Placemark. All placemarks should have names.\n{etree.tostring(place, pretty_print=True).decode()}"
         )
         return False
-    if place.name == "":
+    if place.name.text == "":
         logger.error(
-            f"Invalid Placemark. All placemarks should have valid names (e.g. Source / Hotspot 0).\n{etree.tostring(place, pretty_print=True).decode()}"
+            f"Invalid Placemark. All placemarks should have valid names (e.g. Source / Hotspot 1).\n{etree.tostring(place, pretty_print=True).decode()}"
         )
         return False
     if place.Point is None:
@@ -49,7 +50,7 @@ def validate_placemark(logger: log.Logger, place: str) -> bool:
 
 
 def main(
-    threshold: int, file_1: str, file_2: str, save_directory: str, document_name_prefix: str
+    threshold: float, file_1: str, file_2: str, save_directory: str, document_name_prefix: str
 ) -> int:
     """
     Parses two KML files for every LatLng point in both file_1 & file_2.
@@ -101,15 +102,14 @@ def main(
 
     hotspots = []
     source = []  # There should only be 1 source per KML
-    source_home = (
-        []
-    )  # either file_1 or file_2's source location will be used as a home_pos for conversions
+    home = []
+    home_pos = None
 
     for place in doc_2.iterchildren():  # Append file_2 points to file_1
         doc_1.append(place)
 
     # Preprocess all placemarks
-    for place in doc_1.iterchildren():
+    for i, place in enumerate(doc_1.iterchildren()):
         result = validate_placemark(logger, place)
 
         if not result:
@@ -120,10 +120,12 @@ def main(
         long = float(coordinates[1])
         alt = float(coordinates[2])
 
+        if i == 0:
+            home = [lat, long, alt]  # The first valid placemark will be our home
+
         if "Source" in place.name.text:  # Average all source points
             if len(source) == 0:
                 source = [lat, long, alt]
-                source_home = [lat, long, alt]
             else:
                 source[0] = (source[0] + lat) / 2
                 source[1] = (source[1] + long) / 2
@@ -140,20 +142,20 @@ def main(
                 )
                 return -1
 
-            # source_home (Global Position) used as Home Location
-            result, source_pos = position_global.PositionGlobal.create(
-                latitude=source_home[0], longitude=source_home[1], altitude=source_home[2]
+            # home (Global Position) used as Home Location
+            result, home_pos = position_global.PositionGlobal.create(
+                latitude=home[0], longitude=home[1], altitude=home[2]
             )
 
             if not result:
                 logger.error(
-                    "Failed to create Global Position (source_pos) for Source ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
+                    "Failed to create Global Position (home_pos) for Source ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
                 )
                 return -1
 
-            # Convert Global Pos to Local Pos (Hotspot) using Home Location (source_home)
+            # Convert Global Pos to Local Pos (Hotspot) using Home Location (home)
             result, local_pos = local_global_conversion.position_local_from_position_global(
-                source_pos, hotspot
+                home_pos, hotspot
             )
 
             if not result:
@@ -162,11 +164,7 @@ def main(
                 )
                 return -1
 
-            # Append unique hotspot locations to 'hotspots'
-            if [local_pos.north, local_pos.east, local_pos.down] not in hotspots:
-                hotspots.append([local_pos.north, local_pos.east, local_pos.down])
-            else:
-                print("Shared position has already been appended")
+            hotspots.append([local_pos.north, local_pos.east, local_pos.down])
 
         else:
             logger.error(
@@ -198,15 +196,6 @@ def main(
             # Append the average of the cluster's points
             clusters.append([cluster_lat, cluster_long, cluster_alt])
 
-    # Need source_pos for cluster global pos conversions
-    result, source_pos = position_global.PositionGlobal.create(
-        latitude=source_home[0], longitude=source_home[1], altitude=source_home[2]
-    )
-
-    if not result:
-        logger.error("Failed to create Global Position (source_pos)")
-        return -1
-
     # Convert local position clusters to Global Pos for KML
     global_clusters = []
 
@@ -220,7 +209,7 @@ def main(
             return -1
 
         result, global_pos = local_global_conversion.position_global_from_position_local(
-            source_pos, hotspot
+            home_pos, hotspot
         )
 
         if not result:
@@ -276,7 +265,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--threshold",
-        type=int,
+        type=float,
         default=1,
         help="Threshold for merging points (meters)",
     )

@@ -46,8 +46,6 @@ good-names = [
     "result_main",
 ]
 
-extension-pkg-allow-list="lxml"
-
 [tool.pylint."messages control"]
 # Disable the message, report, category or checker with the given id(s). You can
 # either give multiple identifiers separated by comma (,) or put this option
