@@ -147,6 +147,7 @@ def main(
             result, hotspot = position_global.PositionGlobal.create(
                 latitude=lat, longitude=long, altitude=alt
             )
+
             if not result:
                 logger.error(
                     "Failed to create Global Position (hotspot) for Hotspot ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
@@ -225,12 +226,13 @@ def main(
     doc = KML.Document()
     kml.append(doc)
 
-    doc.append(
-        KML.Placemark(
-            KML.name("Source"),
-            KML.Point(KML.coordinates(f"{source[0]},{source[1]},{source[2]}")),
+    if len(source) == 3:
+        doc.append(
+            KML.Placemark(
+                KML.name("Source"),
+                KML.Point(KML.coordinates(f"{source[0]},{source[1]},{source[2]}")),
+            )
         )
-    )
 
     for i, point in enumerate(global_clusters):
         doc.append(
