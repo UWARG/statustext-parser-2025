@@ -158,7 +158,7 @@ def main(
 
             if not result:
                 logger.error(
-                    "Failed to create Global Position (source_pos) for Hotspot ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
+                    "Failed to convert Global Position (hotspot) to Local Position (local_pos) for Hotspot ({place.name.text}).\n{etree.tostring(place, pretty_print=True).decode()}"
                 )
                 return -1
 
@@ -224,7 +224,9 @@ def main(
         )
 
         if not result:
-            logger.error("Failed to create Global Position (global_pos)")
+            logger.error(
+                "Failed to convert Local Position (hotspot) to Global Position (global_pos)"
+            )
             return -1
 
         global_clusters.append(global_pos)
@@ -259,7 +261,7 @@ def main(
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(etree.tostring(etree.ElementTree(kml), pretty_print=True).decode("utf-8"))
     except IOError as e:
-        logger.error("Failed to write to merged file.\n%s", e)
+        logger.error(f"Failed to write to merged file.\n{e}")
         return -1
 
     return 0
